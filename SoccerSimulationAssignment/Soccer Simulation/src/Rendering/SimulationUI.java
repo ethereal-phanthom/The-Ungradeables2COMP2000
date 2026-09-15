@@ -1,55 +1,15 @@
-/*
-WILLIAM IS DOING THIS PART
-The gui will be the what displays eveything it ties it all together, 
-one feature ive been told to add is while simulation is running a mini print log 
-
-NEEDS:
-- main menu
-    - background splash graphic 
-    - start button 
-        - display an overview graphic of pitch with players on it with the current formation (default formation if no changes made)
-        - formation change button 
-            - list of players for one team
-            - displays a graphic of a pitch with symbols of what each player postion is
-            - swap team formation button (arrows on each side that swaps between premade formations)
-            - swap side button 
-                - changes what side the user will play as, also saves the formation of the current team so that users can change what formations each team will use 
-            - save button locks in the current settings (also sends the user back, no default back button so the user always saves current formations)
-       
-        - match settings button 
-            - player emotion selection button 
-                - three states default, off and extreme
-            - simulation type 
-                - time limit
-                    - match time input selection  
-                - goal limit
-                    - goal limit input box (sets a max number of goals to be scored for simulation to end)
-            - save button locks in the current settings (also sends the user back, no default back button so the user always saves current formations)
-
-        - start match button 
-            - begins the simulation by displaying the pitch, players and match stuff
-            - menu button in the top corner 
-                - pauses the simulation when clicked on
-                - resume button
-                - exit button 
-        - return to main menu button 
-    - settings button (doesnt have to be implemented settings)
-        - debug mode button
-                - makes it run in debug mode
-        - save button
-    - exit button 
-
- */
-
 package Rendering;
 
 import java.awt.*;
 import java.util.ArrayList;
-
 import javax.swing.*;
 
 import Model.SoccerPitch;
 import Model.Player;
+import Model.Defender;
+import Model.Ball;
+import Model.Match;
+import Model.Team;
 
 class UIWindow {
     JFrame frame;
@@ -71,7 +31,6 @@ class UIWindow {
         sidesCircle = new CircleList<>(new String[] { "Home", "Away" });
         pitch = new SoccerPitch();
         vertPitch = new VerticalPitch();
-
     }
 
     void setMenu(Menus menu) {
@@ -87,19 +46,14 @@ class UIWindow {
         frame.setVisible(true);
     }
 
-    boolean getDebug() {
-        return this.debugMode;
-    }
-
+    boolean getDebug() { return this.debugMode; }
     void setDebug(boolean b) {
         this.debugMode = b;
         frame.setTitle("Soccer Simulation" + debugString());
     }
 
     private String debugString() {
-        if (this.getDebug() == true)
-            return " (Debug)";
-
+        if (this.getDebug() == true) return " (Debug)";
         return "";
     }
 
@@ -135,31 +89,19 @@ class UIWindow {
             lbl.setVerticalAlignment(JLabel.CENTER);
         }
     }
-
 }
 
-/*
- * DONE
- */
+
 abstract class Menus extends JPanel {
     protected UIWindow window;
-
-    Menus(UIWindow window) {
-        this.window = window;
-    }
-
+    Menus(UIWindow window) { this.window = window; }
     abstract void next1();
-
     abstract void next2();
-
     abstract void next3();
-
     abstract void back();
 }
 
-/*
- * DONE
- */
+
 class MainMenu extends Menus {
     MainMenu(UIWindow window) {
         super(window);
@@ -168,51 +110,32 @@ class MainMenu extends Menus {
 
         JButton startButton = new JButton("Start");
         startButton.addActionListener(e -> next1());
-
         JButton settingsButton = new JButton("Settings");
         settingsButton.addActionListener(e -> next2());
-
         JButton exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> back());
 
         JButton[] buttons = { startButton, settingsButton, exitButton };
-
         window.displayButtons(buttons);
 
         startButton.setBounds(ScreenSize.width / 2 - 125, ScreenSize.height / 2 - 100, 250, 50);
         settingsButton.setBounds(ScreenSize.width / 2 - 125, ScreenSize.height / 2 - 30, 250, 50);
         exitButton.setBounds(ScreenSize.width / 2 - 125, ScreenSize.height / 2 + 40, 250, 50);
 
-        add(startButton);
-        add(settingsButton);
-        add(exitButton);
-        add(window.pitch);
-    }
+        add(startButton); add(settingsButton); add(exitButton); add(window.pitch);
 
-    @Override
-    void next1() {
-        window.setMenu(new StartMenu(window));
+        setComponentZOrder(startButton, 0);
+        setComponentZOrder(settingsButton, 1);
+        setComponentZOrder(exitButton, 2);
+        setComponentZOrder(window.pitch, 3);
     }
-
-    @Override
-    void next2() {
-        window.setMenu(new SettingsMenu(window));
-    }
-
-    @Override
-    void next3() {
-    }
-
-    @Override
-    void back() {
-        System.exit(0);
-    }
-
+    @Override void next1() { window.setMenu(new StartMenu(window)); }
+    @Override void next2() { window.setMenu(new SettingsMenu(window)); }
+    @Override void next3() {}
+    @Override void back() { System.exit(0); }
 }
 
-/*
- * NEED To add pitch with current saved settings and formations
- */
+
 class StartMenu extends Menus {
     StartMenu(UIWindow window) {
         super(window);
@@ -221,18 +144,14 @@ class StartMenu extends Menus {
 
         JButton startButton = new JButton("Start");
         startButton.addActionListener(e -> next1());
-
         JButton formationButton = new JButton("Formation Settings");
         formationButton.addActionListener(e -> next2());
-
         JButton matchSettingsButton = new JButton("Match Settings");
         matchSettingsButton.addActionListener(e -> next3());
-
         JButton exitButton = new JButton("Back");
         exitButton.addActionListener(e -> back());
 
         JButton[] buttons = { startButton, formationButton, matchSettingsButton, exitButton };
-
         window.displayButtons(buttons);
 
         startButton.setBounds(ScreenSize.width / 4 - 125, ScreenSize.height / 2 - 140, 250, 50);
@@ -240,42 +159,22 @@ class StartMenu extends Menus {
         matchSettingsButton.setBounds(ScreenSize.width / 4 - 125, ScreenSize.height / 2, 250, 50);
         exitButton.setBounds(ScreenSize.width / 4 - 125, ScreenSize.height / 2 + 70, 250, 50);
 
-        add(startButton);
-        add(formationButton);
-        add(matchSettingsButton);
-        add(exitButton);
-        add(window.vertPitch);
-
+        add(startButton); add(formationButton); add(matchSettingsButton); add(exitButton); add(window.vertPitch);
         window.vertPitch.drawPlayers(window);
 
+        setComponentZOrder(startButton, 0);
+        setComponentZOrder(formationButton, 1);
+        setComponentZOrder(matchSettingsButton, 2);
+        setComponentZOrder(exitButton, 3);
+        setComponentZOrder(window.vertPitch, 4);
     }
-
-    @Override
-    void next1() {
-        window.setMenu(new SimWindow(window));
-    }
-
-    @Override
-    void next2() {
-        window.setMenu(new FormationMenu(window));
-    }
-
-    @Override
-    void next3() {
-        window.setMenu(new MatchSettingsMenu(window));
-    }
-
-    @Override
-    void back() {
-        window.setMenu(new MainMenu(window));
-    }
-
+    @Override void next1() { window.setMenu(new SimWindow(window)); }
+    @Override void next2() { window.setMenu(new FormationMenu(window)); }
+    @Override void next3() { window.setMenu(new MatchSettingsMenu(window)); }
+    @Override void back() { window.setMenu(new MainMenu(window)); }
 }
 
-/*
- * NEEDS, to have the debug output make a pop-up window that prints the log of
- * everything that happens
- */
+
 class SettingsMenu extends Menus {
     SettingsMenu(UIWindow window) {
         super(window);
@@ -283,340 +182,302 @@ class SettingsMenu extends Menus {
 
         JCheckBox debugButton = new JCheckBox("Debug Mode", window.getDebug());
         debugButton.addActionListener(e -> window.setDebug(debugButton.isSelected()));
-
         JButton exitButton = new JButton("Save");
         exitButton.addActionListener(e -> back());
 
-        JButton[] buttons = { exitButton };
-        JCheckBox[] boxes = { debugButton };
-        window.displayCheckBox(boxes);
-        window.displayButtons(buttons);
-
+        JButton[] buttons = { exitButton }; JCheckBox[] boxes = { debugButton };
+        window.displayCheckBox(boxes); window.displayButtons(buttons);
         debugButton.setBounds(ScreenSize.width / 2 - 125, ScreenSize.height / 2 - 100, 250, 50);
         exitButton.setBounds(ScreenSize.width / 2 - 125, ScreenSize.height / 2 - 30, 250, 50);
 
-        add(debugButton);
-        add(exitButton);
+        add(debugButton); add(exitButton);
     }
-
-    @Override
-    void next1() {
-    }
-
-    @Override
-    void next2() {
-
-    }
-
-    @Override
-    void next3() {
-
-    }
-
-    @Override
-    void back() {
-        window.setMenu(new MainMenu(window));
-    }
+    @Override void next1() {} @Override void next2() {} @Override void next3() {}
+    @Override void back() { window.setMenu(new MainMenu(window)); }
 }
 
-/*
- * NEED to add the dynamic soccer pitch that changes with formation and sides
- * DEPENDENT on how and what match needs and vertical field
- */
-class FormationMenu extends Menus {
-    CircleList<String> formationCircle;
-    CircleList<String> sidesCircle;
 
+class FormationMenu extends Menus {
     FormationMenu(UIWindow window) {
         super(window);
         setLayout(null);
         window.vertPitch.setBounds(0, 0, 700, 400);
 
-        this.formationCircle = window.formationCircle;
-        this.sidesCircle = window.sidesCircle;
-        JButton formPrevBtn = new JButton("<");
-        JButton formNextBtn = new JButton(">");
+        JButton formPrevBtn = new JButton("<"); JButton formNextBtn = new JButton(">");
+        JLabel formationLabel = new JLabel(window.formationCircle.getCurrent().toString());
+        formPrevBtn.addActionListener(e -> { window.formationCircle.previous(); formationLabel.setText(window.formationCircle.getCurrent().toString()); window.vertPitch.drawPlayers(window); });
+        formNextBtn.addActionListener(e -> { window.formationCircle.next(); formationLabel.setText(window.formationCircle.getCurrent().toString()); window.vertPitch.drawPlayers(window); });
 
-        JLabel formationLabel = new JLabel(formationCircle.getCurrent().toString());
+        JButton swapPrevBtn = new JButton("<"); JButton swapNextBtn = new JButton(">");
+        JLabel swapLabel = new JLabel(window.sidesCircle.getCurrent().toString());
+        swapPrevBtn.addActionListener(e -> { window.vertPitch.swapSides(window); swapLabel.setText(window.sidesCircle.getCurrent().toString()); window.vertPitch.drawPlayers(window); });
+        swapNextBtn.addActionListener(e -> { window.vertPitch.swapSides(window); swapLabel.setText(window.sidesCircle.getCurrent().toString()); window.vertPitch.drawPlayers(window); });
 
-        formPrevBtn.addActionListener(e -> {
-            formationCircle.previous();
-            formationLabel.setText(formationCircle.getCurrent().toString());
-            window.vertPitch.drawPlayers(window);
-        });
-
-        formNextBtn.addActionListener(e -> {
-            formationCircle.next();
-            formationLabel.setText(formationCircle.getCurrent().toString());
-            window.vertPitch.drawPlayers(window);
-        });
-
-        JButton swapPrevBtn = new JButton("<");
-        JButton swapNextBtn = new JButton(">");
-
-        JLabel swapLabel = new JLabel(sidesCircle.getCurrent().toString());
-
-        swapPrevBtn.addActionListener(e -> {
-            window.vertPitch.swapSides(window);
-            swapLabel.setText(sidesCircle.getCurrent().toString());
-            window.vertPitch.drawPlayers(window);
-        });
-
-        swapNextBtn.addActionListener(e -> {
-            window.vertPitch.swapSides(window);
-            swapLabel.setText(sidesCircle.getCurrent().toString());
-            window.vertPitch.drawPlayers(window);
-        });
-
-        JButton exitButton = new JButton("Save");
-        exitButton.addActionListener(e -> back());
+        JButton exitButton = new JButton("Save"); exitButton.addActionListener(e -> back());
 
         JButton[] buttons = { formPrevBtn, formNextBtn, swapPrevBtn, swapNextBtn, exitButton };
         JLabel[] labels = { formationLabel, swapLabel };
-        window.displayLabel(labels);
-
-        window.displayButtons(buttons);
+        window.displayLabel(labels); window.displayButtons(buttons);
 
         formPrevBtn.setBounds(ScreenSize.width / 4 - 125, ScreenSize.height / 2 - 140, 45, 50);
         formationLabel.setBounds(ScreenSize.width / 4 - 75, ScreenSize.height / 2 - 140, 150, 50);
         formNextBtn.setBounds(ScreenSize.width / 4 + 80, ScreenSize.height / 2 - 140, 45, 50);
-
         swapPrevBtn.setBounds(ScreenSize.width / 4 - 125, ScreenSize.height / 2 - 70, 45, 50);
         swapLabel.setBounds(ScreenSize.width / 4 - 75, ScreenSize.height / 2 - 70, 150, 50);
         swapNextBtn.setBounds(ScreenSize.width / 4 + 80, ScreenSize.height / 2 - 70, 45, 50);
-
         exitButton.setBounds(ScreenSize.width / 4 - 125, ScreenSize.height / 2, 250, 50);
 
-        add(formPrevBtn);
-        add(formationLabel);
-        add(formNextBtn);
-
-        add(swapPrevBtn);
-        add(swapLabel);
-        add(swapNextBtn);
-
-        add(exitButton);
-
-        add(window.vertPitch);
-
+        add(formPrevBtn); add(formationLabel); add(formNextBtn); add(swapPrevBtn); add(swapLabel); add(swapNextBtn); add(exitButton); add(window.vertPitch);
         window.vertPitch.drawPlayers(window);
+
+        setComponentZOrder(formPrevBtn, 0);
+        setComponentZOrder(formationLabel, 1);
+        setComponentZOrder(formNextBtn, 2);
+        setComponentZOrder(swapPrevBtn, 3);
+        setComponentZOrder(swapLabel, 4);
+        setComponentZOrder(swapNextBtn, 5);
+        setComponentZOrder(exitButton, 6);
+        setComponentZOrder(window.vertPitch, 7);
     }
-
-    @Override
-    void next1() {
-    }
-
-    @Override
-    void next2() {
-
-    }
-
-    @Override
-    void next3() {
-
-    }
-
-    @Override
-    void back() {
-        window.setMenu(new StartMenu(window));
-    }
+    @Override void next1() {} @Override void next2() {} @Override void next3() {}
+    @Override void back() { window.setMenu(new StartMenu(window)); }
 }
 
-/*
- * DONE, for this implementation cycle next one need to add the actual changable
- * settings
- */
+
 class MatchSettingsMenu extends Menus {
     MatchSettingsMenu(UIWindow window) {
         super(window);
         setLayout(null);
-
-        JButton exitButton = new JButton("Save");
-        exitButton.addActionListener(e -> back());
-
-        JButton[] buttons = { exitButton };
-
-        window.displayButtons(buttons);
-
+        JButton exitButton = new JButton("Save"); exitButton.addActionListener(e -> back());
+        JButton[] buttons = { exitButton }; window.displayButtons(buttons);
         exitButton.setBounds(ScreenSize.width / 2 - 125, ScreenSize.height / 2 - 100, 250, 50);
-
         add(exitButton);
     }
-
-    @Override
-    void next1() {
-        // empty for the time being
-    }
-
-    @Override
-    void next2() {
-        // empty for the time being
-
-    }
-
-    @Override
-    void next3() {
-        // empty for the time being
-    }
-
-    @Override
-    void back() {
-        window.setMenu(new StartMenu(window));
-    }
+    @Override void next1() {} @Override void next2() {} @Override void next3() {}
+    @Override void back() { window.setMenu(new StartMenu(window)); }
 }
 
-/*
- * NEEDS, this is temporary set up need to make it play the actual match
- * simulation but
- * i got to build that first so this is just a place holder
- * 
- */
+
 class SimWindow extends Menus {
+    private Timer gameLoop;
+    private int redScore = 0;
+    private int blueScore = 0;
+    private Match match;
+    private JLabel clockLabel;
+    private JLabel blueScoreLabel;
+    private JLabel redScoreLabel;
+    private JLabel goalBanner;
+    private JButton endMatchButton;
+    private int goalBannerTicksLeft = 0;
+
     SimWindow(UIWindow window) {
         super(window);
         setLayout(null);
-        window.pitch.setBounds(0, 0, 700, 400);
+        window.pitch.setBounds(0, 60, 700, 340);
 
-        JButton menuButton = new JButton("Menu");
-        menuButton.addActionListener(e -> back());
+        // Direct one-click exit back to the main menu, available at any point in the match.
+        JButton mainMenuButton = new JButton("Main Menu");
+        mainMenuButton.addActionListener(e -> {
+            if (gameLoop != null) gameLoop.stop();
+            window.setMenu(new MainMenu(window));
+        });
+        window.displayButtons(new JButton[]{mainMenuButton});
+        mainMenuButton.setBounds(520, 5, 170, 40);
 
-        JButton[] buttons = { menuButton };
+        JPanel scoreboard = new JPanel(null);
+        scoreboard.setBounds(0, 0, 700, 55);
+        scoreboard.setBackground(Color.BLACK);
 
-        window.displayButtons(buttons);
+        blueScoreLabel = new JLabel("BLUE TEAM   0", SwingConstants.CENTER);
+        blueScoreLabel.setForeground(Color.CYAN);
+        blueScoreLabel.setFont(new Font("Lexend", Font.BOLD, 18));
+        blueScoreLabel.setBounds(20, 10, 200, 35);
 
-        menuButton.setBounds(ScreenSize.width / 5 - 125, ScreenSize.height - 385, 80, 40);
+        redScoreLabel = new JLabel("0   RED TEAM", SwingConstants.CENTER);
+        redScoreLabel.setForeground(Color.RED);
+        redScoreLabel.setFont(new Font("Lexend", Font.BOLD, 18));
+        redScoreLabel.setBounds(420, 10, 200, 35);
 
-        add(menuButton);
-        add(window.pitch);
+        clockLabel = new JLabel("0'", SwingConstants.CENTER);
+        clockLabel.setForeground(Color.WHITE);
+        clockLabel.setFont(new Font("Lexend", Font.BOLD, 22));
+        clockLabel.setBounds(280, 8, 90, 38);
 
+        scoreboard.add(blueScoreLabel);
+        scoreboard.add(clockLabel);
+        scoreboard.add(redScoreLabel);
+
+        goalBanner = new JLabel("GOAL!", SwingConstants.CENTER);
+        goalBanner.setForeground(Color.YELLOW);
+        goalBanner.setFont(new Font("Lexend", Font.BOLD, 60));
+        goalBanner.setBounds(150, 150, 400, 80);
+        goalBanner.setVisible(false);
+
+        endMatchButton = new JButton("End Match");
+        endMatchButton.setBounds(250, 250, 200, 60);
+        endMatchButton.setFont(new Font("Lexend", Font.BOLD, 20));
+        endMatchButton.setBackground(Color.decode("#404143"));
+        endMatchButton.setForeground(Color.WHITE);
+        endMatchButton.setFocusPainted(false);
+        endMatchButton.setVisible(false);
+        endMatchButton.addActionListener(e -> {
+            if (gameLoop != null) gameLoop.stop();
+            window.setMenu(new StartMenu(window));
+        });
+
+        String formation = window.formationCircle.getCurrent();
+        ArrayList<Player> matchPlayers = new ArrayList<>();
+        buildTeam(matchPlayers, formation, Team.BLUE, Color.BLUE, false);
+        buildTeam(matchPlayers, formation, Team.RED, Color.RED, true);
+
+        match = new Match();
+        match.setPlayers(matchPlayers);
+        Ball ball = new Ball(350, 200);
+        match.setBall(ball);
+        window.pitch.setMatch(match);
+
+        add(scoreboard); add(mainMenuButton); add(goalBanner); add(endMatchButton); add(window.pitch);
+
+        setComponentZOrder(scoreboard, 0);
+        setComponentZOrder(mainMenuButton, 1);
+        setComponentZOrder(goalBanner, 2);
+        setComponentZOrder(endMatchButton, 3);
+        setComponentZOrder(window.pitch, 4);
+
+        gameLoop = new Timer(50, e -> {
+
+            String goalMessage = match.tick(msg -> System.out.println("REFEREE: " + msg));
+
+            match.receivePassesIfArrived();
+
+            String scoringTeam = match.consumeLastGoalTeam();
+            if (scoringTeam != null) {
+                if (scoringTeam.equals("RED")) redScore++;
+                else blueScore++;
+                blueScoreLabel.setText("BLUE TEAM   " + blueScore);
+                redScoreLabel.setText(redScore + "   RED TEAM");
+
+                goalBanner.setText((scoringTeam.equals("RED") ? "RED" : "BLUE") + " SCORES!");
+                goalBanner.setVisible(true);
+                goalBannerTicksLeft = 30;
+            }
+
+            if (goalBannerTicksLeft > 0) {
+                goalBannerTicksLeft--;
+                if (goalBannerTicksLeft == 0) goalBanner.setVisible(false);
+            }
+
+            clockLabel.setText((int) match.getMatchMinute() + "'");
+
+            if (match.isFullTime()) {
+                clockLabel.setText("FT");
+                endMatchButton.setVisible(true);
+                if (gameLoop.isRunning()) gameLoop.stop();
+            }
+
+            window.pitch.repaint();
+        });
+        gameLoop.start();
     }
 
-    @Override
-    void next1() {
-        // empty for the time being
+    private void buildTeam(ArrayList<Player> out, String formation, Team team, Color colour, boolean mirrored) {
+        double[][] layout = formationLayout(formation);
+        for (int i = 0; i < layout.length; i++) {
+            double nx = layout[i][0];
+            double ny = layout[i][1];
+            if (mirrored) nx = 1.0 - nx;
+            int x = (int) (nx * ScreenSize.width);
+            int y = (int) (ny * ScreenSize.height);
+            int jersey = i + 1;
+
+            Player p;
+            if (i == 1 || i == 2) {
+                p = new Defender(x, y, jersey, colour, team, 70 + (int) (Math.random() * 20));
+            } else {
+                p = new Player(x, y, jersey, colour, team);
+            }
+            if (i == 0) {
+                p.setGoalkeeper(true);
+            }
+            out.add(p);
+        }
     }
 
-    @Override
-    void next2() {
-        // empty for the time being
-
+    private double[][] formationLayout(String formation) {
+        if (formation.equals("4-3-3")) {
+            return new double[][] {
+                {0.05, 0.50},
+                {0.20, 0.20}, {0.20, 0.35}, {0.20, 0.65}, {0.20, 0.80},
+                {0.40, 0.30}, {0.42, 0.50}, {0.40, 0.70},
+                {0.65, 0.20}, {0.68, 0.50}, {0.65, 0.80}
+            };
+        } else if (formation.equals("3-5-2")) {
+            return new double[][] {
+                {0.05, 0.50},
+                {0.20, 0.30}, {0.20, 0.50}, {0.20, 0.70},
+                {0.38, 0.12}, {0.40, 0.35}, {0.42, 0.50}, {0.40, 0.65}, {0.38, 0.88},
+                {0.65, 0.40}, {0.65, 0.60}
+            };
+        }
+        return new double[][] {
+            {0.05, 0.50},
+            {0.20, 0.20}, {0.20, 0.40}, {0.20, 0.60}, {0.20, 0.80},
+            {0.42, 0.15}, {0.40, 0.38}, {0.40, 0.62}, {0.42, 0.85},
+            {0.65, 0.38}, {0.65, 0.62}
+        };
     }
 
-    @Override
-    void next3() {
-        // empty for the time being
-    }
-
-    @Override
-    void back() {
-        window.setMenu(new SimWindowMenu(window));
-    }
+    @Override void next1() {} @Override void next2() {} @Override void next3() {}
+    @Override void back() { window.setMenu(new SimWindowMenu(window)); }
 }
 
-/*
- * NEEDS to pause the simulation then start it again just go to test it does
- * that after i implement the match class
- * DEPENDENT on MATCH class
- */
+
 class SimWindowMenu extends Menus {
     SimWindowMenu(UIWindow window) {
         super(window);
         setLayout(null);
-
-        JButton resumeButton = new JButton("Resume");
-        resumeButton.addActionListener(e -> next1());
-
-        JButton exitButton = new JButton("Exit");
-        exitButton.addActionListener(e -> back());
-
-        JButton[] buttons = { resumeButton, exitButton };
-
-        window.displayButtons(buttons);
-
+        JButton resumeButton = new JButton("Resume"); resumeButton.addActionListener(e -> next1());
+        JButton exitButton = new JButton("Exit"); exitButton.addActionListener(e -> back());
+        JButton[] buttons = { resumeButton, exitButton }; window.displayButtons(buttons);
         resumeButton.setBounds(ScreenSize.width / 2 - 75, ScreenSize.height / 2 - 100, 150, 50);
         exitButton.setBounds(ScreenSize.width / 2 - 75, ScreenSize.height / 2 - 30, 150, 50);
-
-        add(resumeButton);
-        add(exitButton);
+        add(resumeButton); add(exitButton);
     }
-
-    @Override
-    void next1() {
-        window.setMenu(new SimWindow(window));
-    }
-
-    @Override
-    void next2() {
-        // empty for the time being
-
-    }
-
-    @Override
-    void next3() {
-        // empty for the time being
-    }
-
-    @Override
-    void back() {
-        window.setMenu(new StartMenu(window));
-    }
+    @Override void next1() { window.setMenu(new SimWindow(window)); }
+    @Override void next2() {} @Override void next3() {}
+    @Override void back() { window.setMenu(new StartMenu(window)); }
 }
 
-/*
- * DONE
- */
+
 class CircleNode<T> {
-    T value;
-    CircleNode<T> next;
-    CircleNode<T> prev;
-
-    CircleNode(T value) {
-        this.value = value;
-    }
+    T value; CircleNode<T> next; CircleNode<T> prev;
+    CircleNode(T value) { this.value = value; }
 }
 
-/*
- * DONE
- */
+
 class CircleList<T> {
     private CircleNode<T> current;
-
     CircleList(T[] values) {
         CircleNode<T> start = new CircleNode<T>(values[0]);
         CircleNode<T> prevNode = start;
-
         for (int i = 1; i < values.length; i++) {
             CircleNode<T> node = new CircleNode<>(values[i]);
-            prevNode.next = node;
-            node.prev = prevNode;
-            prevNode = node;
+            prevNode.next = node; node.prev = prevNode; prevNode = node;
         }
-
-        prevNode.next = start;
-        start.prev = prevNode;
-
+        prevNode.next = start; start.prev = prevNode;
         this.current = start;
-
     }
-
-    T getCurrent() {
-        return current.value;
-    }
-
-    void next() {
-        this.current = this.current.next;
-    }
-
-    void previous() {
-        this.current = this.current.prev;
-    }
+    T getCurrent() { return current.value; }
+    void next() { this.current = this.current.next; }
+    void previous() { this.current = this.current.prev; }
 }
 
+
 class VerticalPitch extends JPanel {
-    private int width;
-    private int height;
+    private int width; private int height;
     private ArrayList<Player> players;
     private Color sideColour = Color.BLUE;
+    private Team sideTeam = Team.BLUE;
     private int rectX, rectY, rectW, rectH;
 
     VerticalPitch() {
@@ -625,134 +486,62 @@ class VerticalPitch extends JPanel {
         this.height = ScreenSize.height / 2 + 130;
         this.width = (int) (this.height * 0.65);
         players = new ArrayList<>();
-
-
-        rectX = ScreenSize.width - width - 50;
-        rectY = height - 310;
-        rectW = width;
-        rectH = height;
-
+        rectX = ScreenSize.width - width - 50; rectY = height - 310; rectW = width; rectH = height;
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        g.setColor(new Color(50, 150, 50)); g.fillRect(rectX, rectY, rectW, rectH);
+        g.setColor(Color.WHITE); g.drawRect(rectX, rectY, rectW, rectH); g.drawLine(rectX, rectY + rectH / 2, rectX + rectW, rectY + rectH / 2);
 
-        g.setColor(new Color(50, 150, 50));
-        g.fillRect(rectX, rectY, rectW, rectH);
-
-        g.setColor(Color.WHITE);
-        g.drawRect(rectX, rectY, rectW, rectH);
-        g.drawLine(rectX, rectY + rectH / 2, rectX + rectW, rectY + rectH / 2);
-
-        int penaltySpan = (int) (rectW * 0.59);
-        int penaltyDepth = (int) (rectH * 0.16);
+        int penaltySpan = (int) (rectW * 0.59); int penaltyDepth = (int) (rectH * 0.16);
         int penaltyX = rectX + (rectW - penaltySpan) / 2;
-        g.drawRect(penaltyX, rectY, penaltySpan, penaltyDepth);
-        g.drawRect(penaltyX, rectY + rectH - penaltyDepth, penaltySpan, penaltyDepth);
+        g.drawRect(penaltyX, rectY, penaltySpan, penaltyDepth); g.drawRect(penaltyX, rectY + rectH - penaltyDepth, penaltySpan, penaltyDepth);
 
-        int centerX = rectX + rectW / 2;
-        int centerY = rectY + rectH / 2;
-        int circleRadius = (int) (rectW * 0.135);
-        g.drawOval(centerX - circleRadius, centerY - circleRadius, circleRadius * 2, circleRadius * 2);
-        g.fillOval(centerX - 4, centerY - 4, 8, 8);
+        int centerX = rectX + rectW / 2; int centerY = rectY + rectH / 2; int circleRadius = (int) (rectW * 0.135);
+        g.drawOval(centerX - circleRadius, centerY - circleRadius, circleRadius * 2, circleRadius * 2); g.fillOval(centerX - 4, centerY - 4, 8, 8);
 
-        int goalSpan = (int) (rectW * 0.27);
-        int goalDepth = (int) (rectH * 0.05);
-        int goalX = rectX + (rectW - goalSpan) / 2;
-        g.drawRect(goalX, rectY, goalSpan, goalDepth);
-        g.drawRect(goalX, rectY + rectH - goalDepth, goalSpan, goalDepth);
+        int goalSpan = (int) (rectW * 0.27); int goalDepth = (int) (rectH * 0.05); int goalX = rectX + (rectW - goalSpan) / 2;
+        g.drawRect(goalX, rectY, goalSpan, goalDepth); g.drawRect(goalX, rectY + rectH - goalDepth, goalSpan, goalDepth);
 
         int spotOffset = (int) (rectH * 0.105);
-        g.fillOval(centerX - 4, rectY + spotOffset - 4, 8, 8);
-        g.fillOval(centerX - 4, rectY + rectH - spotOffset - 4, 8, 8);
+        g.fillOval(centerX - 4, rectY + spotOffset - 4, 8, 8); g.fillOval(centerX - 4, rectY + rectH - spotOffset - 4, 8, 8);
 
-        for (Player p : players) {
-            p.draw(g);
-        }
+        for (Player p : players) { p.draw(g); }
     }
 
      private void addPlayer(int jerseyNumber, double nx, double ny) {
-        int x = rectX + (int) (nx * rectW);
-        int y = rectY + (int) (ny * rectH);
-        players.add(new Player(x, y, jerseyNumber, sideColour));
+        int x = rectX + (int) (nx * rectW); int y = rectY + (int) (ny * rectH);
+        players.add(new Player(x, y, jerseyNumber, sideColour, sideTeam));
     }
 
     void drawPlayers(UIWindow window){
-        players.clear(); // avoid stacking duplicates on repeated calls
-
+        players.clear();
         String formation = window.formationCircle.getCurrent();
-
-        addPlayer(1, 0.5, 0.92); // goalkeeper, same for every formation
-
+        addPlayer(1, 0.5, 0.92);
         if (formation.equals("4-4-2")) {
-            addPlayer(2, 0.15, 0.75);
-            addPlayer(3, 0.38, 0.75);
-            addPlayer(4, 0.62, 0.75);
-            addPlayer(5, 0.85, 0.75);
-            addPlayer(6, 0.15, 0.50);
-            addPlayer(7, 0.38, 0.50);
-            addPlayer(8, 0.62, 0.50);
-            addPlayer(9, 0.85, 0.50);
-            addPlayer(10, 0.35, 0.22);
-            addPlayer(11, 0.65, 0.22);
-
+            addPlayer(2, 0.15, 0.75); addPlayer(3, 0.38, 0.75); addPlayer(4, 0.62, 0.75); addPlayer(5, 0.85, 0.75); addPlayer(6, 0.15, 0.50); addPlayer(7, 0.38, 0.50); addPlayer(8, 0.62, 0.50); addPlayer(9, 0.85, 0.50); addPlayer(10, 0.35, 0.22); addPlayer(11, 0.65, 0.22);
         } else if (formation.equals("4-3-3")) {
-            addPlayer(2, 0.15, 0.75);
-            addPlayer(3, 0.38, 0.75);
-            addPlayer(4, 0.62, 0.75);
-            addPlayer(5, 0.85, 0.75);
-            addPlayer(6, 0.25, 0.50);
-            addPlayer(7, 0.50, 0.50);
-            addPlayer(8, 0.75, 0.50);
-            addPlayer(9, 0.15, 0.20);
-            addPlayer(10, 0.50, 0.18);
-            addPlayer(11, 0.85, 0.20);
-
+            addPlayer(2, 0.15, 0.75); addPlayer(3, 0.38, 0.75); addPlayer(4, 0.62, 0.75); addPlayer(5, 0.85, 0.75); addPlayer(6, 0.25, 0.50); addPlayer(7, 0.50, 0.50); addPlayer(8, 0.75, 0.50); addPlayer(9, 0.15, 0.20); addPlayer(10, 0.50, 0.18); addPlayer(11, 0.85, 0.20);
         } else if (formation.equals("3-5-2")) {
-            addPlayer(2, 0.25, 0.78);
-            addPlayer(3, 0.50, 0.78);
-            addPlayer(4, 0.75, 0.78);
-            addPlayer(5, 0.08, 0.52);
-            addPlayer(6, 0.30, 0.52);
-            addPlayer(7, 0.50, 0.52);
-            addPlayer(8, 0.70, 0.52);
-            addPlayer(9, 0.92, 0.52);
-            addPlayer(10, 0.35, 0.22);
-            addPlayer(11, 0.65, 0.22);
+            addPlayer(2, 0.25, 0.78); addPlayer(3, 0.50, 0.78); addPlayer(4, 0.75, 0.78); addPlayer(5, 0.08, 0.52); addPlayer(6, 0.30, 0.52); addPlayer(7, 0.50, 0.52); addPlayer(8, 0.70, 0.52); addPlayer(9, 0.92, 0.52); addPlayer(10, 0.35, 0.22); addPlayer(11, 0.65, 0.22);
         }
-
         repaint();
     }
 
     void swapSides(UIWindow window){
         if(window.sidesCircle.getCurrent().equals("Home")){
-            sideColour = Color.RED;
-            window.sidesCircle.next();
+            sideColour = Color.RED; sideTeam = Team.RED; window.sidesCircle.next();
         } else {
-            sideColour = Color.BLUE;
-            window.sidesCircle.next();
+            sideColour = Color.BLUE; sideTeam = Team.BLUE; window.sidesCircle.next();
         }
-        
-        
     }
-
 }
 
-/*
- * the vertical pitch will just be for display while the important information
- * like the formation and sides will be saved into the actual pitch, the
- * formations are hard coded so i can just have an array for each postion on the
- * field 1 for goalkeeper, 5 for every other postion adn then just add players
- * to those arrays and then just hard code arrays or even easier just an if
- * statement that prints one side if the custom circle list value is said
- * formation then just have it draw the players on the field accordingly
- */
 
 public class SimulationUI {
-
     public static void main(String[] args) {
         new UIWindow().start();
     }
-
 }
