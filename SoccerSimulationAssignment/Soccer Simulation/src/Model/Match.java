@@ -158,7 +158,7 @@ public class Match {
         for (Player p : players) {
             if (p == nearestRed || p == nearestBlue) {
                 p.stepToward(ball.getX(), ball.getY(), CHASE_SPEED);
-                if (distance(p, ball.getX(), ball.getY()) < 12) {
+                if (p.distanceTo(ball.getX(), ball.getY()) < 12) {
                     ball.attachTo(p);
                 }
             } else {
@@ -169,7 +169,7 @@ public class Match {
 
     private boolean isBallInOwnBox(Player keeper) {
         if (keeper == null) return false;
-        return distance(keeper, ball.getX(), ball.getY()) <= GOALKEEPER_BOX_RADIUS;
+        return keeper.distanceTo(ball.getX(), ball.getY()) <= GOALKEEPER_BOX_RADIUS;
     }
 
     private Player findGoalkeeper(Team team) {
@@ -223,13 +223,13 @@ public class Match {
     /** True when the holder is within DEFENSIVE_THIRD_RANGE of the opponent's own goal. */
     private boolean isNearGoal(Player holder, Team defendingTeam) {
         int goalX = (defendingTeam == Team.RED) ? 700 : 0;
-        return distance(holder, goalX, 200) <= DEFENSIVE_THIRD_RANGE;
+        return holder.distanceTo(goalX, 200) <= DEFENSIVE_THIRD_RANGE;
     }
 
     /** Attempts a single challenge; returns the winning challenger, or null if no tackle happened. */
     private Player resolveChallenge(Player challenger, Player holder, Consumer<String> refereeLog) {
         if (challenger == null) return null;
-        if (distance(challenger, holder.getX(), holder.getY()) > CHALLENGE_RANGE) return null;
+        if (challenger.distanceTo(holder.getX(), holder.getY()) > CHALLENGE_RANGE) return null;
         if (ball.getPossessor() != holder) return null; // already lost it to a prior challenge this tick
 
         boolean challengerWins = Math.random() < 0.5;
@@ -279,7 +279,7 @@ public class Match {
         Player nearest = null;
         double best = Double.MAX_VALUE;
         for (Player p : candidates) {
-            double d = distance(p, targetX, targetY);
+            double d = p.distanceTo(targetX, targetY);
             if (d < best) {
                 best = d;
                 nearest = p;
@@ -323,7 +323,7 @@ public class Match {
         Team opponentTeam = (holder.getTeam() == Team.RED) ? Team.BLUE : Team.RED;
         Player nearestOpponent = nearestChallenger(opponentTeam, null);
         boolean underPressure = nearestOpponent != null &&
-                distance(nearestOpponent, holder.getX(), holder.getY()) <= PRESSURE_RANGE;
+                nearestOpponent.distanceTo(holder.getX(), holder.getY()) <= PRESSURE_RANGE;
 
         if (!underPressure && Math.random() > PASS_CHANCE) return false;
 
@@ -369,7 +369,7 @@ public class Match {
     public void receivePassesIfArrived() {
         if (ball.getPossessor() != null || ball.isLoose()) return;
         for (Player p : players) {
-            if (distance(p, ball.getX(), ball.getY()) < 14) {
+            if (p.distanceTo(ball.getX(), ball.getY()) < 14) {
                 ball.attachTo(p);
                 return;
             }
@@ -379,16 +379,12 @@ public class Match {
     private boolean attemptShotIfInRange(Player holder) {
         int goalX = (holder.getTeam() == Team.RED) ? 0 : 700;
         int goalY = 200;
-        double distToGoal = distance(holder, goalX, goalY);
+        double distToGoal = holder.distanceTo(goalX, goalY);
 
         if (distToGoal <= SHOOTING_RANGE) {
             ball.shoot(holder, goalX, goalY, SHOT_ERROR_FACTOR);
             return true;
         }
         return false;
-    }
-
-    private double distance(Player p, int targetX, int targetY) {
-        return Math.sqrt(Math.pow(p.getX() - targetX, 2) + Math.pow(p.getY() - targetY, 2));
     }
 }
