@@ -18,7 +18,7 @@ public class Match {
     private static final int SHOOTING_RANGE = 200;
     private static final double SHOT_ERROR_FACTOR = 0.4;
     private static final int PRESSURE_RANGE = 55;
-    private static final double PASS_CHANCE = 0.35;
+    private static final double PASS_CHANCE = 0.45;
     private static final int FORWARD_BIAS = 30;
     private static final int GOALKEEPER_FORWARD_BIAS = 10;
     private static final int GOALKEEPER_BOX_RADIUS = 100;
