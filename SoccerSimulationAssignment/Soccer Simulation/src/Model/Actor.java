@@ -2,7 +2,7 @@ package Model;
 import java.awt.Color;
 import java.awt.Graphics;
 
-public abstract class Actor {
+public abstract class Actor implements Drawable {
     protected int x, y;
     protected int baseX, baseY;
     protected Color colour;
