@@ -14,15 +14,18 @@ public class Match {
     private static final int DRIBBLE_SPEED = 3;
     private static final int FORWARD_PUSH = 60;
     private static final int CHALLENGE_RANGE = 32;
-    private static final int SECOND_DEFENDER_RANGE = 45; // extra cover defender near the box
-    private static final int SHOOTING_RANGE = 200;
+    private static final int SECOND_DEFENDER_RANGE = 45; 
+    private static final int SHOOTING_RANGE = 220; // Increased slightly so they shoot more often
     private static final double SHOT_ERROR_FACTOR = 0.4;
     private static final int PRESSURE_RANGE = 55;
-    private static final double PASS_CHANCE = 0.45;
+    
+    // Fixed: Lowered significantly so they dribble instead of playing "hot potato"
+    private static final double PASS_CHANCE = 0.02; 
+    
     private static final int FORWARD_BIAS = 30;
     private static final int GOALKEEPER_FORWARD_BIAS = 10;
     private static final int GOALKEEPER_BOX_RADIUS = 100;
-    private static final int DEFENSIVE_THIRD_RANGE = 260; // deeper defenders converge inside this zone
+    private static final int DEFENSIVE_THIRD_RANGE = 260; 
     private static final int PITCH_WIDTH = 700;
 
     private static final double SIM_MINUTES_PER_TICK = 90.0 / 2400.0;
@@ -113,7 +116,8 @@ public class Match {
 
         String goalMessage = ball.updatePhysics();
         if (goalMessage != null) {
-            lastGoalScorerTeam = goalMessage.contains("RED") ? "RED" : "BLUE";
+            // Fixed: Safely handles lowercase/uppercase goals so Red gets their points!
+            lastGoalScorerTeam = goalMessage.toUpperCase().contains("RED") ? "RED" : "BLUE";
             resetToKickoff();
         }
         return goalMessage;
@@ -183,13 +187,6 @@ public class Match {
         return nearestOf(team, null, ball.getX(), ball.getY());
     }
 
-    /**
-     * Defends symmetrically for both teams. The nearest available defender always
-     * challenges the holder; additionally, if the holder has advanced into their
-     * DEFENSIVE_THIRD_RANGE (close to that team's own goal), a SECOND defender also
-     * converges to add pressure - mirroring how real defences collapse numbers around
-     * their own box rather than leaving a lone defender to deal with an attacker.
-     */
     private void runChallengeAgainstPossessor(Consumer<String> refereeLog) {
         Player holder = ball.getPossessor();
         Team opponentTeam = (holder.getTeam() == Team.RED) ? Team.BLUE : Team.RED;
@@ -220,17 +217,15 @@ public class Match {
         }
     }
 
-    /** True when the holder is within DEFENSIVE_THIRD_RANGE of the opponent's own goal. */
     private boolean isNearGoal(Player holder, Team defendingTeam) {
         int goalX = (defendingTeam == Team.RED) ? 700 : 0;
         return holder.distanceTo(goalX, 200) <= DEFENSIVE_THIRD_RANGE;
     }
 
-    /** Attempts a single challenge; returns the winning challenger, or null if no tackle happened. */
     private Player resolveChallenge(Player challenger, Player holder, Consumer<String> refereeLog) {
         if (challenger == null) return null;
         if (challenger.distanceTo(holder.getX(), holder.getY()) > CHALLENGE_RANGE) return null;
-        if (ball.getPossessor() != holder) return null; // already lost it to a prior challenge this tick
+        if (ball.getPossessor() != holder) return null; 
 
         boolean challengerWins = Math.random() < 0.5;
 
@@ -260,12 +255,6 @@ public class Match {
         return nearestOf(team, exclude, ball.getX(), ball.getY());
     }
 
-    /**
-     * Finds the nearest eligible player on a team to a target point. Ties are broken
-     * randomly (by shuffling the candidate order before scanning) instead of always
-     * favouring whichever player happens to be earlier in the list - this removes a
-     * hidden bias where one team could win every exact-distance tie every match.
-     */
     private Player nearestOf(Team team, Set<Player> exclude, int targetX, int targetY) {
         ArrayList<Player> candidates = new ArrayList<>();
         for (Player p : players) {
@@ -378,10 +367,11 @@ public class Match {
 
     private boolean attemptShotIfInRange(Player holder) {
         int goalX = (holder.getTeam() == Team.RED) ? 0 : 700;
-        int goalY = 200;
+        int goalY = 170; 
         double distToGoal = holder.distanceTo(goalX, goalY);
 
         if (distToGoal <= SHOOTING_RANGE) {
+            // Fixed: Changed back to exact coordinates instead of vectors so they don't aim off the pitch!
             ball.shoot(holder, goalX, goalY, SHOT_ERROR_FACTOR);
             return true;
         }
