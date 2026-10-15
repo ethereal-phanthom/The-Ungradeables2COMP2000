@@ -33,9 +33,14 @@ public class Match {
     private static final int FULL_TIME_MINUTE = 90;
     private static final int HALF_TIME_MINUTE = 45;
 
-    // Strategies for chasing the ball and moving back into formation
-    private final MovementStrategy chaseMovement = new ChaseMovementStrategy(CHASE_SPEED);
-    private final MovementStrategy formationMovement = new FormationMovementStrategy();
+    // Strategy for chasing the ball
+    private final MovementStrategy chaseMovement =
+        new ChaseMovementStrategy(CHASE_SPEED);
+
+    // Lambda for moving players back into formation
+    private final MovementStrategy formationMovement =
+        (player, targetX, targetY) ->
+            player.idleDriftToward(targetX, targetY);
 
     private ArrayList<Player> players;
     private Ball ball;
@@ -206,7 +211,7 @@ public class Match {
 
             if (p == nearestRed || p == nearestBlue) {
 
-                // Players closest to the ball use the chase strategy
+                // Nearest players use the chase strategy
                 chaseMovement.move(p, ball.getX(), ball.getY());
 
                 if (p.distanceTo(ball.getX(), ball.getY()) < 12) {
@@ -215,7 +220,7 @@ public class Match {
 
             } else {
 
-                // Other players move back towards their formation
+                // Other players use the lambda movement strategy
                 formationMovement.move(p, p.baseX, p.baseY);
             }
         }
