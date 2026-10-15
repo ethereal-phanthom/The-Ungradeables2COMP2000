@@ -567,36 +567,31 @@ public class Match {
         }
     }
 
+    // Uses streams to find the most advanced teammate for a pass
     private Player mostAdvancedForwardTeammate(
         Player holder,
         int forwardBias
     ) {
-        double holderForwardness = forwardnessOf(holder);
-        double bestForwardness = holderForwardness + forwardBias;
+        double minimumForwardness = forwardnessOf(holder) + forwardBias;
 
-        Player best = null;
+        return players.stream()
+            // Only considers teammates who can receive the ball
+            .filter(p -> p != holder &&
+                         p.getTeam() == holder.getTeam() &&
+                         !p.isGoalkeeper())
 
-        for (Player p : players) {
-            if (p == holder ||
-                p.getTeam() != holder.getTeam() ||
-                p.isGoalkeeper()) {
-                continue;
-            }
+            // Excludes defenders who have been sent off
+            .filter(p -> !(p instanceof Defender) ||
+                         !((Defender) p).isSentOff())
 
-            if (p instanceof Defender &&
-                ((Defender) p).isSentOff()) {
-                continue;
-            }
+            // Only considers players far enough forward
+            .filter(p -> forwardnessOf(p) > minimumForwardness)
 
-            double forwardness = forwardnessOf(p);
+            // Chooses the furthest player, keeping the first in a tie
+            .reduce((best, p) ->
+                forwardnessOf(p) > forwardnessOf(best) ? p : best)
 
-            if (forwardness > bestForwardness) {
-                bestForwardness = forwardness;
-                best = p;
-            }
-        }
-
-        return best;
+            .orElse(null);
     }
 
     public void receivePassesIfArrived() {
