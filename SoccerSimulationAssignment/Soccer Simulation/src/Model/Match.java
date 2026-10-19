@@ -5,6 +5,10 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.DoubleSummaryStatistics;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -55,6 +59,10 @@ public class Match {
 
     private String lastGoalScorerTeam = null;
 
+    // Records the team holding the ball at the start of each match tick
+    private final ArrayList<Team> possessionSamples = new ArrayList<>();
+    private int nextStatsMinute = 15;
+
     public Match() {
         players = new ArrayList<>();
     }
@@ -102,6 +110,11 @@ public class Match {
 
         if (fullTimeReached) {
             return null;
+        }
+
+        // Save a possession sample while a player has the ball
+        if (!ball.isLoose() && ball.getPossessor() != null) {
+            possessionSamples.add(ball.getPossessor().getTeam());
         }
 
         if (ball.isLoose()) {
@@ -157,6 +170,12 @@ public class Match {
             resetToKickoff();
         }
 
+        // Show updated statistics every 15 simulated minutes
+        if (matchMinute >= nextStatsMinute) {
+            logMatchStatistics(refereeLog);
+            nextStatsMinute += 15;
+        }
+
         return goalMessage;
     }
 
@@ -188,7 +207,63 @@ public class Match {
             refereeLog.accept(
                 "FULL-TIME. Referee blows the final whistle."
             );
+            logMatchStatistics(refereeLog);
         }
+    }
+
+    // Uses collectors to create live match statistics
+    private void logMatchStatistics(Consumer<String> refereeLog) {
+
+        // Count the possession samples for each team
+        Map<Team, Long> possessionCounts = possessionSamples.stream()
+            .collect(Collectors.groupingBy(
+                team -> team,
+                Collectors.counting()
+            ));
+
+        long blueTicks = possessionCounts.getOrDefault(Team.BLUE, 0L);
+        long redTicks = possessionCounts.getOrDefault(Team.RED, 0L);
+        long totalTicks = blueTicks + redTicks;
+
+        // Loose-ball ticks are not counted as possession
+        double bluePercent = totalTicks == 0 ? 0.0
+            : 100.0 * blueTicks / totalTicks;
+
+        double redPercent = totalTicks == 0 ? 0.0
+            : 100.0 * redTicks / totalTicks;
+
+        // Find the average attacking position of each team's outfield players
+        Map<Team, DoubleSummaryStatistics> attackingPositions =
+            players.stream()
+                .filter(p -> !p.isGoalkeeper())
+                .filter(p -> !(p instanceof Defender) ||
+                             !((Defender) p).isSentOff())
+                .collect(Collectors.groupingBy(
+                    Player::getTeam,
+                    Collectors.summarizingDouble(this::forwardnessOf)
+                ));
+
+        DoubleSummaryStatistics bluePositions =
+            attackingPositions.get(Team.BLUE);
+
+        DoubleSummaryStatistics redPositions =
+            attackingPositions.get(Team.RED);
+
+        double blueAverage = bluePositions == null ? 0.0
+            : bluePositions.getAverage();
+
+        double redAverage = redPositions == null ? 0.0
+            : redPositions.getAverage();
+
+        refereeLog.accept(String.format(Locale.ROOT,
+            "MATCH STATS %d': Possession BLUE %.0f%% / RED %.0f%% " +
+            "| Avg attacking position BLUE %.0f / RED %.0f",
+            (int) matchMinute,
+            bluePercent,
+            redPercent,
+            blueAverage,
+            redAverage
+        ));
     }
 
     // Uses different strategies depending on what the player needs to do
