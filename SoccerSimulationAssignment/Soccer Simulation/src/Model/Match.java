@@ -2,7 +2,9 @@
 package Model;
 
 import java.awt.Graphics;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -214,12 +216,18 @@ public class Match {
     // Uses collectors to create live match statistics
     private void logMatchStatistics(Consumer<String> refereeLog) {
 
-        // Count the possession samples for each team
-        Map<Team, Long> possessionCounts = possessionSamples.stream()
-            .collect(Collectors.groupingBy(
-                team -> team,
-                Collectors.counting()
-            ));
+        // Take a snapshot before parallel work to avoid shared mutable state.
+        // The match tick remains sequential; only statistics run in parallel.
+        List<Team> possessionSnapshot =
+            new ArrayList<>(possessionSamples);
+
+        // Parallel collector counts each team's possession samples.
+        Map<Team, Long> possessionCounts =
+            possessionSnapshot.parallelStream()
+                .collect(Collectors.groupingBy(
+                    team -> team,
+                    Collectors.counting()
+                ));
 
         long blueTicks = possessionCounts.getOrDefault(Team.BLUE, 0L);
         long redTicks = possessionCounts.getOrDefault(Team.RED, 0L);
@@ -232,15 +240,26 @@ public class Match {
         double redPercent = totalTicks == 0 ? 0.0
             : 100.0 * redTicks / totalTicks;
 
-        // Find the average attacking position of each team's outfield players
-        Map<Team, DoubleSummaryStatistics> attackingPositions =
+        // Capture the team and forward position of each eligible player.
+        // Parallel workers read these fixed values, not moving Player objects.
+        List<Map.Entry<Team, Double>> positionSnapshot =
             players.stream()
                 .filter(p -> !p.isGoalkeeper())
                 .filter(p -> !(p instanceof Defender) ||
                              !((Defender) p).isSentOff())
+                .map(p -> new AbstractMap.SimpleImmutableEntry<>(
+                    p.getTeam(), forwardnessOf(p)
+                ))
+                .collect(Collectors.toList());
+
+        // Summarise attacking positions in parallel for each team.
+        Map<Team, DoubleSummaryStatistics> attackingPositions =
+            positionSnapshot.parallelStream()
                 .collect(Collectors.groupingBy(
-                    Player::getTeam,
-                    Collectors.summarizingDouble(this::forwardnessOf)
+                    Map.Entry::getKey,
+                    Collectors.summarizingDouble(
+                        Map.Entry::getValue
+                    )
                 ));
 
         DoubleSummaryStatistics bluePositions =
@@ -259,10 +278,7 @@ public class Match {
             "MATCH STATS %d': Possession BLUE %.0f%% / RED %.0f%% " +
             "| Avg attacking position BLUE %.0f / RED %.0f",
             (int) matchMinute,
-            bluePercent,
-            redPercent,
-            blueAverage,
-            redAverage
+            bluePercent, redPercent, blueAverage, redAverage
         ));
     }
 
@@ -647,9 +663,11 @@ public class Match {
         Player holder,
         int forwardBias
     ) {
-        double minimumForwardness = forwardnessOf(holder) + forwardBias;
+        double minimumForwardness =
+            forwardnessOf(holder) + forwardBias;
 
         return players.stream()
+
             // Only considers teammates who can receive the ball
             .filter(p -> p != holder &&
                          p.getTeam() == holder.getTeam() &&
