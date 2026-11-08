@@ -446,37 +446,45 @@ public class Match {
             return null;
         }
 
-        ball.releaseFrom();
-
+        // A defender must complete the tackle before winning possession
         if (challenger instanceof Defender) {
-            Defender d = (Defender) challenger;
+            Defender defender = (Defender) challenger;
 
             try {
-                d.attemptTackle(
+                boolean tackleSuccessful = defender.attemptTackle(
                     (int) (Math.random() * 100)
                 );
 
-                refereeLog.accept(
-                    "Player #" + challenger.getJerseyNumber() +
-                    " (" + challenger.getTeam() +
-                    ") wins the ball!"
-                );
+                if (!tackleSuccessful) {
+                    beatenDefenders.add(challenger);
+
+                    refereeLog.accept(
+                        "Player #" + holder.getJerseyNumber() +
+                        " (" + holder.getTeam() + ") gets past #" +
+                        challenger.getJerseyNumber() +
+                        " (" + challenger.getTeam() + ")!"
+                    );
+
+                    return null;
+                }
 
             } catch (RedCardException e) {
-                refereeLog.accept(
-                    "REFEREE: " + e.getMessage()
-                );
+                // Sent-off players cannot take possession
+                beatenDefenders.add(challenger);
+                refereeLog.accept("REFEREE: " + e.getMessage());
+                return null;
             }
-
-        } else {
-            refereeLog.accept(
-                "Player #" + challenger.getJerseyNumber() +
-                " (" + challenger.getTeam() +
-                ") wins the ball!"
-            );
         }
 
+        // Only a successful challenge transfers possession
+        ball.releaseFrom();
         ball.attachTo(challenger);
+
+        refereeLog.accept(
+            "Player #" + challenger.getJerseyNumber() +
+            " (" + challenger.getTeam() + ") wins the ball!"
+        );
+
         return challenger;
     }
 
